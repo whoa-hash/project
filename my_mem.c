@@ -20,5 +20,13 @@ void my_free(void *mem_pointer){
 
 //provides statistics about the current allocation of the memory poo
 void mem_get_stats(mem_stats_ptr mem_stats_ptr){
-    
+    typedef struct  {
+    int num_blocks_used;
+    int num_blocks_free;
+    int smallest_block_free;
+    int smallest_block_used;
+    int largest_block_free;
+    int largest_block_used;
+    } mem_stats_struct, *mem_stats_ptr;
+
 }
