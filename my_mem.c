@@ -1,5 +1,7 @@
-
-//this routine is guaranteed to be called before any of the other routines, and can do whatever initialization is needed.  The memory to be managed is passed into this routine.
+#include <stdio.h>
+/*this routine is guaranteed to be called before any of the other routines, 
+and can do whatever initialization is needed.  The memory to be managed is passed into 
+this routine.*/
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
     //something here
 }
@@ -20,10 +22,7 @@ void my_free(void *mem_pointer){
 }
 
 
-
-//provides statistics about the current allocation of the memory poo
-void mem_get_stats(mem_stats_ptr mem_stats_ptr){
-    typedef struct  {
+typedef struct  {
     int num_blocks_used;
     int num_blocks_free;
     int smallest_block_free;
@@ -31,6 +30,22 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
     int largest_block_free;
     int largest_block_used;
     } mem_stats_struct, *mem_stats_ptr;
-    //QUESTION FOR PROF SHAMASH ABOUT THIS MEM-STATS-PTR ERROR
-    //I JUST COPY-PASTED. SO SHOULD I CHANGE THIS?
+
+//provides statistics about the current allocation of the memory poo
+void mem_get_stats(mem_stats_ptr mem_stats_ptr){
+    
+}
+
+void print_stats(char *prefix) {
+  mem_stats_struct mem_stats;
+
+  mem_get_stats(&mem_stats);
+  printf("mem stats: %s: %d free blocks, %d used blocks, free blocks: smallest=%d largest=%d, used blocks: smallest=%d largest=%d\n",
+	 prefix,
+	 mem_stats.num_blocks_free,
+	 mem_stats.num_blocks_used,
+	 mem_stats.smallest_block_free,
+	 mem_stats.largest_block_free,
+	 mem_stats.smallest_block_used,
+	 mem_stats.largest_block_used);
 }
