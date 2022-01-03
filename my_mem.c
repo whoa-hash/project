@@ -43,28 +43,50 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
     //set it to be unallocated
     arr_p->allocated = 0;
 
+    //also, allocate memory for the total allocated to 
+    //be used later - points to an int
+    total_allocated = (int*)malloc(sizeof(int));
+
+    //allocate memory for the end address
+    mem_max_addr = (item_info *)malloc(sizeof(int));
+    //pointer to the end of the heap of allocated memory
+    mem_max_addr = (item_info*)(arr_p + (my_mem_size * sizeof(item_info)));
 }
 
 
 //a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init()
 void *my_malloc(unsigned size){
-    int *temp_p = arr_p;
-    int i;
-    for(int i=0; i<size; i++){
-        //pointer val is 1 if it's used/allocated
-        // allocated size - current address will give us the possibly unallocated memory
-        if((*(temp_p+i)!=1) && (arr_last_p - temp_p >=size)){
-            for(int j=i; j<=size; j++){
-                // allocate the memory
-                A[j] = 1;
-            }
-            break; // don't need the for loop anymore
+    /*
+    loop through the structs array as long as we have not
+    reached the end of the memory pool 
+    */
+    while(*(total_allocated)<=global_mem_size
+        && arr_p-mem_max_addr!=0){ //this is to make sure we haven't reached the end of the pool
+        if ((arr_p->allocated == 0) && (mem_max_addr-arr_p>=sizeof(size))){
+            break;
         }
+        arr_p = arr_p->next_p;
+    }
+    // if there's no more allocation space or we've reached the end without finding a spot
+    if((*(total_allocated)<=global_mem_size) || (arr_p-mem_max_addr!=0)){
+        return NULL;
+    }
+    //if there is a free spot
+    else if(arr_p->allocated==0){
+        //set the size
+        arr_p->size = sizeof(size);
+        //update the end and next pointers
+        arr_p->end_pointer = arr_p + size;
+        arr_p->next_p = arr_p->end_pointer + 1;
+        //set it to be allocated
+        arr_p->allocated = 1;
+        //add it to the total allocation
+        *total_allocated = *total_allocated + arr_p->size;
 
     }
-    //HOW TO ACCESS THE GLOBAL VARIABLES? LIKE MEM_SIZE
-    // returns the pointer to the beginning of the allocated memory
-    return A[i];
+    
+    // returns the pointer to the current start of the allocated memory
+    return arr_p;
     //HOW DO YOU ACCESS THE MEMORY POOL WITHOUT PASSING IT IN
 /*returns a pointer to a block of memory of at least size bytes
 that is suitably aligned for any kind of data object that mfght be contained in the
@@ -84,8 +106,15 @@ void my_free(void *mem_pointer){
     //need to know where to stop freeing space
     //make a struct for each mem_pointer with a second_end pointer
     // it could be a key value pair instead of a struct
-   
-
+    
+    //loop through the pointers and when you get to the right one
+    //set the allocation to 0
+    while(arr_p-(item_info*)mem_pointer!=0){
+        if(arr_p-(item_info*)mem_pointer == 0){ //if you find it
+            (item_info*)mem_pointer->allocated = 0;
+        }
+    }
+    
 }
 
 
