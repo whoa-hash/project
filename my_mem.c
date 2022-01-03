@@ -106,8 +106,15 @@ void my_free(void *mem_pointer){
     //need to know where to stop freeing space
     //make a struct for each mem_pointer with a second_end pointer
     // it could be a key value pair instead of a struct
-   
-
+    
+    //loop through the pointers and when you get to the right one
+    //set the allocation to 0
+    while(arr_p-(item_info*)mem_pointer!=0){
+        if(arr_p-(item_info*)mem_pointer == 0){ //if you find it
+            (item_info*)mem_pointer->allocated = 0;
+        }
+    }
+    
 }
 
 
