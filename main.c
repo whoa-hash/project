@@ -1,9 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-
-void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {};
-void *my_malloc(unsigned size){};
-void mem_get_stats(mem_stats_ptr mem_stats_ptr){};
+#include "mem_all.h"
 
 int main(int argc, char **argv)
 {
