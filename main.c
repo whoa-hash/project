@@ -2,12 +2,20 @@
 #include <stdlib.h>
 #include "mem_all.h"
 
+//points to the first byte in the heap
+item_info *arr_p;
+//points to the last byte of the heap
+int *arr_last_p;
+int *total_allocated;
+int global_mem_size;
+static item_info *mem_max_addr;
+
 int main(int argc, char **argv)
 {
   unsigned int global_mem_size = 1024 * 1024;
   unsigned char *global_memory = malloc(global_mem_size);
-
-  mem_init(global_memory, global_mem_size);
+  
+  mem_init(global_memory, global_mem_size); //pointer to the global memory, and the size
   print_stats("init");
 
   unsigned char *ptr_array[10];
@@ -15,7 +23,7 @@ int main(int argc, char **argv)
 
   for (int i = 0; sizes[i] != 0; i++) {
     char buf[1024];
-    ptr_array[i] = my_malloc(sizes[i]);
+    ptr_array[i] = my_malloc(sizes[i]); //this pointer points to the allocated memory from my_malloc
     
     sprintf(buf, "after iteration %d size %d", i, sizes[i]);
     print_stats(buf);

@@ -172,9 +172,55 @@ typedef struct  {
     int largest_block_used;
     } mem_stats_struct, *mem_stats_ptr;
 
-//provides statistics about the current allocation of the memory poo
+//provides statistics about the current allocation of the memory pool
 void mem_get_stats(mem_stats_ptr mem_stats_ptr){
+    int i = 0;
+    // the size was originally set to be the whole thing
+    if (arr_p[i].size == global_mem_size){
+         //with no allocations there should be zero allocated and 1 free and the largest 
+        mem_stats_ptr->num_blocks_used = 0;
+        mem_stats_ptr->num_blocks_free = 1;
+        mem_stats_ptr->smallest_block_free = global_mem_size;
+        mem_stats_ptr->smallest_block_used = 0;
+        mem_stats_ptr->largest_block_free = global_mem_size;
+        mem_stats_ptr->largest_block_used = 0;
+        return;
+    }
+    mem_stats_ptr->num_blocks_used = 0;
+    mem_stats_ptr->num_blocks_free = 1;
+    mem_stats_ptr->smallest_block_free = global_mem_size;
+    // mem_stats_ptr->smallest_block_used = 0; = we don't want this because nothing is going to be less than this
+    // mem_stats_ptr->largest_block_free = global_mem_size; same logic except that this is greater than
+    mem_stats_ptr->largest_block_used = 0;
+
+    //loop through the list or until a pointer hasn't been initialized
+    while(i<=global_mem_size || &arr_p[i] == NULL){
+        if (arr_p[i].allocated == 1){
+            //it'll start off at zero
+            mem_stats_ptr->num_blocks_used +=1;
+
+            if(arr_p[i].size <mem_stats_ptr->smallest_block_used){
+                mem_stats_ptr->smallest_block_used = arr_p[i].size;
+            }
+            if(arr_p[i].size >mem_stats_ptr->largest_block_used){
+                mem_stats_ptr->largest_block_used = arr_p[i].size;
+            }
+        }
+        //if it's not 1 then how are you going to represent an unused block??? i guess with null
+        //or if it has a 0 allocated and a size?
+        else{
+            if (arr_p[i].size < mem_stats_ptr->smallest_block_free){
+                mem_stats_ptr->smallest_block_free = arr_p[i].size;
+            }
+            if (arr_p[i].size < mem_stats_ptr->smallest_block_free){
+                mem_stats_ptr->smallest_block_free = arr_p[i].size;
+            }
+            mem_stats_ptr->num_blocks_free += 1;
+            printf("in the else for the get mem stats");
     
+        }
+    
+    }
 }
 
 void print_stats(char *prefix) {
