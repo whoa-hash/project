@@ -60,66 +60,6 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size) {
 
 }
 
-
-//a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init()
-void *my_malloc(unsigned size){
-    //ignore size 0
-    if (size==0){
-        return NULL;
-    }
-    //need to somehow set the logic for the rest of the struct pointers, set their values, maybe iterate over them
-
-    //maybe make a separate function for finding a free space
-    /*
-    loop through the structs array as long as we have not
-    reached the end of the memory pool 
-    */
-    int i = 0;
-    
-    while(i<=global_mem_size){ //this is to make sure we haven't reached the end of the pool
-        //if it is unallocated and the size is large enough
-        if ((arr_p[i].allocated == 0) && (global_mem_size - *total_allocated >=sizeof(size))){
-            break;
-        }
-        i++;
-        
-    }
-    // if there's no more allocation space or we've reached the end without finding a spot
-    if((*(total_allocated)<=global_mem_size) || (i<=global_mem_size)){
-        return NULL;
-    }
-    //if there is a free spot
-    else if(arr_p->allocated==0){
-        //set the size
-        arr_p->size = size;
-        //update the end and next pointers
-        // arr_p->end_pointer = arr_p + size;
-        // arr_p->next_p = arr_p->end_pointer + 1;
-
-        //HOW DO I DO THIS?
-        //set the current pointer to the address from the memory pool with a previous pointer
-        //can just go to previous pointer with arr[i]
-        arr_p->my_mem = (arr_p - sizeof(item_info))->my_mem + sizeof(item_info); //gives the previous pointer's address and then we just, get 
-        //its location
-        
-        //set it to be allocated
-        arr_p->allocated = 1;
-        //add it to the total allocation
-        *total_allocated = *total_allocated + arr_p->size;
-
-        
-
-    }
-    
-    // returns the pointer to the current start of the allocated memory
-    return arr_p;
-    //HOW DO YOU ACCESS THE MEMORY POOL WITHOUT PASSING IT IN
-/*returns a pointer to a block of memory of at least size bytes
-that is suitably aligned for any kind of data object that mfght be contained in the
-bl9ck.
-*/
-}
-
 void * find_free(unsigned size){
     //while you haven't reached the end of the memory pool
     //find the first free block, go till you reach a not free block and if it's not enough size,
@@ -127,6 +67,9 @@ void * find_free(unsigned size){
     int i=0;
     int cur_size = 0;
     item_info *blockp;
+    //if there's no more allocation space we can return right away
+    if (global_mem_size - *total_allocated < size) return NULL;
+
     while(i<=global_mem_size){
         blockp = &arr_p[i];
         while(arr_p[i].allocated != 1){
@@ -144,6 +87,51 @@ void * find_free(unsigned size){
     return NULL;
 
 }
+
+//a function functionally equivalent to malloc() , but allocates it from the memory pool passed to mem_init()
+void *my_malloc(unsigned size){
+    //ignore size 0
+    if (size==0){
+        return NULL;
+    }
+    //need to somehow set the logic for the rest of the struct pointers, set their values, maybe iterate over them
+
+    //maybe make a separate function for finding a free space
+    /*
+    loop through the structs array as long as we have not
+    reached the end of the memory pool 
+    */
+    if(find_free(size) == NULL){  // if there's no more allocation space or we've reached the end without finding a spot
+        return NULL;
+    }
+
+    //if there is a free spot
+    else{
+        item_info *return_p = (item_info*)find_free(size);
+        //set the size
+        return_p->size = size;
+        //update the end and next pointers
+        // arr_p->end_pointer = arr_p + size;
+        // arr_p->next_p = arr_p->end_pointer + 1;
+
+        //HOW DO I DO THIS?
+        //set the current pointer to the address from the memory pool with a previous pointer
+        //can just go to previous pointer with arr[i]
+        return_p->my_mem = (arr_p - sizeof(item_info))->my_mem + sizeof(item_info); //gives the previous pointer's address and then we just, get 
+        //its location
+        
+        //set it to be allocated
+        return_p->allocated = 1;
+        //add it to the total allocation
+        *total_allocated = *total_allocated + return_p->size;
+        // returns the pointer to the current start of the allocated memory
+         /*returns a pointer to a block of memory of at least size bytes
+        */
+        return return_p;
+    }
+}
+
+
 //a function equivalent to free() , but returns the memory to the pool passed to mem_init()
 /*
 The mm free routine frees the block pointed to by ptr. It returns nothing. 
@@ -162,20 +150,15 @@ void my_free(void *mem_pointer){
 
         }
         i++;
-        arr_p[i];
     }
+
+    //once you free a space, if you allocated let's say 3 structs for a continuous size, 
+    //then wouldn't you need to know where that pointer ends? or take away the other pointers? 
+    //so that the next time you loop through, you pass to the end of the allocated structs, contiguous blocks?
 
     //need to know where to stop freeing space
     //make a struct for each mem_pointer with a second_end pointer
     // it could be a key value pair instead of a struct
-    
-    //loop through the pointers and when you get to the right one
-    //set the allocation to 0
-    while(arr_p-(item_info*)mem_pointer!=0){
-        if(arr_p-(item_info*)mem_pointer == 0){ //if you find it
-            (item_info*)mem_pointer->allocated = 0;
-        }
-    }
     
 }
 
