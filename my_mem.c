@@ -185,7 +185,7 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
             mem_stats_ptr->num_blocks_free += 1;
             while((!(*header & 1)) == 1){ //there's a free block
             cur_free_size += *header;
-            header = (size_t *)((char *)header + (*header & ~1L));   anding it helps with alignment   
+            header = (size_t *)((char *)header + (*header & ~1L));   //anding it helps with alignment   
            
             }
             if (cur_free_size < smallest_free_size){
