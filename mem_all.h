@@ -1,14 +1,15 @@
-#define MAX_HEAP = 1111 * 1111
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size);
 void *my_malloc(unsigned size);
+void my_free(void *ptr);
+
+typedef struct  {
+  int num_blocks_used;
+  int num_blocks_free;
+  int smallest_block_free;
+  int smallest_block_used;
+  int largest_block_free;
+  int largest_block_used;
+} mem_stats_struct, *mem_stats_ptr;
+void mem_get_stats(mem_stats_ptr mem_stats_ptr);
+
 void print_stats(char *prefix);
-void my_free(void *mem_pointer);
-typedef struct item item_info;
-extern item_info * arr_p;
-extern int* arr_last_p;
-extern int* total_allocated;
-static item_info *mem_max_addr; /* Max legal heap addr plus 1*/
-extern int global_mem_size;
-/*good source that I used here
-https://stackoverflow.com/questions/6618921/calling-a-function-from-another-file-in-the-same-directory-in-c
-*/
