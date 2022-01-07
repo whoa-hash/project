@@ -43,19 +43,10 @@ void *sbrk(int incr)
         return NULL;
     }
 
-    if ( (incr < 0) || ((mem_brk + incr) > mem_max_addr)) {
-        fprintf(stderr, "ERROR: mem_sbrk failed. Ran out of memory...\n");
-        //an obvious invalid address
-        return NULL; //could also change this to return null
-    }
-
     else{
         printf("mem break is %p\n",mem_brk);
-
-        // point to the top of the (now) heap, and return the pointer that was passed in
-        mem_brk += incr;
-        return (void *)old_brk;
     }
+    // point to the top of the (now) heap, and return the pointer that was passed in
     printf("mem break is %p\n",mem_brk);
     mem_brk += incr;
     return (void *)old_brk;
@@ -101,8 +92,7 @@ return NULL;
 }
 
 void *my_malloc(unsigned size) {
- 
- printf("total used: %d\n",total_used);
+
  if(total_used>global_mem_size){
      return NULL;
  }
@@ -126,10 +116,10 @@ void *my_malloc(unsigned size) {
   if (header == NULL){
       return NULL;
   }
- total_used += *header;
+ total_used = total_used + *header;
  *header = blk_size | 1;
-//  printf("at end of my_malloc :%zu \n", (*header)-1);
- not_allocated +=1; //not allocated is now false
+
+ not_allocated = not_allocated + 1; //not allocated is now false
  
  return (char *)header + 8; //returns a pointer to the payload (not to the header)
 }
@@ -154,6 +144,7 @@ void my_free(void *ptr) {
  not_allocated -=1;
 
 }
+
 typedef struct  {
   int num_blocks_used;
   int num_blocks_free;
@@ -194,8 +185,8 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
             mem_stats_ptr->num_blocks_free += 1;
             while((!(*header & 1)) == 1){ //there's a free block
             cur_free_size += *header;
-            header = (size_t *)((char *)header + (*header & ~1L));      
-            // printf("%d",cur_size);  
+            header = (size_t *)((char *)header + (*header & ~1L));   anding it helps with alignment   
+           
             }
             if (cur_free_size < smallest_free_size){
                 smallest_free_size = cur_free_size;
@@ -209,7 +200,7 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
        
         else if((*header & 1) == 1){ //there's a used block
             
-            // printf("block was used\n");
+          
             mem_stats_ptr->num_blocks_used += 1;
             //if the blksize is smaller than the smallest used block size
             //then minusing the blksize from global memory will be the biggest free
@@ -235,7 +226,7 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
             }
         }
         else printf("WHAT WOULD THIS BE?");
-        // printf("this is the header %zu", *header);
+        
         // header = header + *header;
         header = (size_t *)((char *)header + (*header & ~1L)); //continue looping
     }
