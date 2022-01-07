@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 int main(){
-    unsigned int global_mem_size = 20;
+    unsigned int global_mem_size = 30;
     unsigned char *global_memory = malloc(global_mem_size);
     
     mem_init(global_memory, global_mem_size); //pointer to the global memory, and the size
