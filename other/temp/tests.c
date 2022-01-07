@@ -16,14 +16,16 @@ int main(){
     sizes[0] = 0;
     ptr_array[0] = my_malloc(sizes[0]);
     if(ptr_array[0]==NULL){
+            printf("checking for size 0 value");
             printf("test case passed!\n");
         }
-    else printf("after the zero malloc\n");
+
     sizes[0] = 1;
     for (int i = 0; i<4; i++) {
         ptr_array[i] = my_malloc(sizes[i]);
         printf("size of i is = to %d\n", sizes[i]);
-        if(ptr_array[i]==NULL){
+        if(ptr_array[i]==NULL && i>=1){
+            printf("checking that the memory is full doesn't break\n");
             printf("value return is null after i is %d\n", i);
             printf("test case passed!\n");
             printf("--------------------\n");
@@ -33,6 +35,9 @@ int main(){
         }
 
     }
-    printf("after the for loop\n");
+    my_free(ptr_array[0]);
+    printf("checking that memory can be freed");
+    ptr_array[0] = my_malloc(1);
+    print_stats((char *)ptr_array[0]);
 
 }
