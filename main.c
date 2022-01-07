@@ -1,14 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "mem_all.h"
+#include "header_file.h"
 
 //points to the first byte in the heap
-item_info *arr_p;
-//points to the last byte of the heap
-int *arr_last_p;
-int *total_allocated;
-int global_mem_size;
-static item_info *mem_max_addr;
 
 int main(int argc, char **argv)
 {
@@ -19,7 +13,7 @@ int main(int argc, char **argv)
   print_stats("init");
 
   unsigned char *ptr_array[10];
-  unsigned int sizes[] = {50, 20, 20, 20, 50, 0};
+  unsigned int sizes[] = {50, 20, 20, 20, 50, 100, 500, 1000,0};
 
   for (int i = 0; sizes[i] != 0; i++) {
     char buf[1024];
@@ -38,4 +32,5 @@ int main(int argc, char **argv)
   my_free(ptr_array[0]);  print_stats("after free #0");
 
   my_free(ptr_array[4]);  print_stats("after free #4");
+  
 }
