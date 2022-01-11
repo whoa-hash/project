@@ -193,7 +193,7 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
     int cur_free_size =0;
 	
     //loop till the end of the heap
-    while (header < (size_t *)mem_max_addr) {
+    while ((char *)header < mem_max_addr) {
         cur_free_size=0;
         largest_free_size = 0;
         smallest_free_size = 0;
@@ -203,7 +203,7 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
            
             mem_stats_ptr->num_blocks_free += 1;
             //go until we reach an unallocated bit and stop if we've reached the end
-            while(((*header & 1) != 1) && (header < (size_t *)mem_max_addr)){ //there's a free block
+            while(((*header & 1) != 1) && ((char *)header < mem_max_addr)){ //there's a free block
                 cur_free_size += *header; //add up the sizes that are in those blocks
                 header = (size_t *)((char *)header + (*header & ~1L)); //go to the next block     
             }
@@ -261,18 +261,12 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
                 
                 if ((*header-1) > mem_stats_ptr->largest_block_used){
                     mem_stats_ptr->largest_block_used = *header -1;
-                    // mem_stats_ptr->largest_block_free = largest_free_size;
                 }
             }
         }
-        
         // while we're not at the end of the heap
         header = (size_t *)((char *)header + (*header & ~1L)); //continue looping
     }
-    if(header == (size_t *)mem_max_addr-1){ //it will never get here, probably
-        printf("true");
-    }
- 
 }
 
 void print_stats(char *prefix) {
