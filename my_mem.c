@@ -2,147 +2,161 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <sys/types.h>
+#include <string.h>
 
 // code is inspired by the Ilinois Institute College of Science
-/*alignment is 8 + 8 for the header so if you have n bits allocated 
-it's really n*alignment(8) + 8(header) i.e. 1 bit will have a 16 bit block allocated
+/*alignment is 8 + 8 for the header so if you have n bytes allocated 
+it's really n*alignment(8) + 8(header) i.e. 1 byte will have a 16 byte block allocated
 */
-#define ALIGNMENT 8 // must be a power of 2 for the bit allocation
-#define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~(ALIGNMENT-1)) //aligns to be a multiple
-#define SIZE_T_SIZE (ALIGN(sizeof(size_t))) // header size
+//if it's a power of 2 you can use the last bit on the right (which is 8 bytes over) for allocation
+#define ALIGNMENT 8 // must be a power of 2 for the byte allocation
+//aligns to be a multiple of 8 i.e. Aligning a header which is already 8 bytes will keep it at 8 bytes
+#define ALIGN(size) (((size) + (ALIGNMENT-1)) & ~(ALIGNMENT-1)) //this will just be 8 bytes for the header when you don't add in a size
+#define SIZE_T_SIZE (ALIGN(sizeof(size_t))) // header size in bytes, size_t is 8 bytes;
 
 /* Private global variables */
+//char is one byte
 static char *mem_heap;     /* Points to first byte of heap */ 
 static char *mem_brk;      /* Points to last byte of heap plus 1 */
 static char *mem_max_addr; /* Max legal heap addr plus 1*/ 
 
-unsigned int global_mem_size;
-unsigned int total_free;
+int global_mem_size;
 int total_used = 0;
 //for my mem_stats function
 int not_allocated =0;
 
+void *find_fit(size_t size);
+
 //initializes memory that I'll be using (my 'heap')
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size)
 {
-    mem_heap = (char *)malloc(my_mem_size);
-    mem_brk = (char *)mem_heap;               
+    //first pointer to my heap
+    mem_heap = (char *)malloc(my_mem_size);            
     mem_max_addr = (char *)(mem_heap + my_mem_size); 
     global_mem_size = my_mem_size;
 
-}
+    //initialize the spots in memory;   
+    size_t *first = (size_t *)mem_heap;
+    //initialize the first block
+    *(size_t *)mem_heap = global_mem_size;   //it's a free block and has all the memory
+    first++;
 
-//places the new data into a new place in the array
-void *sbrk(int incr) 
-{
-    char *old_brk = mem_brk;
-
-    //if we're trying to access memory that we don't have return null
-    if((incr < 0) || (mem_max_addr - mem_brk) < incr){
-        printf("true\n");
-        return NULL;
+    //let's loop throught the memheap and initialize everything else to 0
+    //loop by char because it's one byte
+    for(char i=1; (char *)first<mem_max_addr; i++){
+        *first = 0;
+        first++;
     }
-
-    else{
-        printf("mem break is %p\n",mem_brk);
-    }
-    // point to the top of the (now) heap, and return the pointer that was passed in
-    printf("mem break is %p\n",mem_brk);
-    mem_brk += incr;
-    return (void *)old_brk;
-    
-}
-
-/* return address of the first heap byte
- */
-void *heap_start()
-{
-    return (void *)mem_heap;
-}
-
-/* 
- * return address of last heap byte
- */
-void *heap_end()
-{
-    return (void *)(mem_brk - 1);
-}
-
-// finds a spot for the size that is inputted
-void *find_fit(size_t size) {
- size_t *header = heap_start(),
- *next;
-
-while (header < (size_t *)heap_end()) {
-    if (!(*header & 1)) {
-        if (*header >= size) //if there's enough space to be allocated, take it
-            return header;
-        next = (size_t *)header + *header; //go to the next spot
-    // merge with next block if available & free
-        if (next < (size_t *)heap_end() && !(*next & 1)) {
-            *header += *next;
-            continue;
-        }
-        
-    } //if the spot is not free continue looping
-    header = (size_t *)header + (*header & ~1L);
-}
-//we didn't find a free spot
-return NULL;
 }
 
 void *my_malloc(unsigned size) {
-
- if(total_used>global_mem_size){
-     return NULL;
- }
- printf("inside malloc\n");
+    //some base cases
  if((size ==0) || (size>global_mem_size)){
      return NULL;
  }
+ if((total_used +size)>global_mem_size){  //if we ran out of space
+     return NULL;
+ }
+  
+ //1 byte is 8 bits
+ //block that's aligned by a multiple of 8 with an 8 byte header
  size_t blk_size = ALIGN(size + SIZE_T_SIZE);
- printf("size_t %lu and total size is: %lu and blksize is%lu", SIZE_T_SIZE,(size+SIZE_T_SIZE), blk_size);
- size_t *header = find_fit(blk_size);
-//  if(header == NULL){
-//      printf("returning null");
-//      return NULL;
-//  }
-
- if (header && blk_size < *header)
- // split block if possible 
- *(size_t *)((char *)header + blk_size) = *header - blk_size;
- else
-    header = sbrk(blk_size);
-  if (header == NULL){
-      return NULL;
-  }
- total_used = total_used + *header;
- *header = blk_size | 1;
-
- not_allocated = not_allocated + 1; //not allocated is now false
  
+ //find a spot for the block
+ size_t *header = find_fit(blk_size); //give it a pointer/place on the heap
+ if(header == NULL){
+     return NULL;
+ }
+//if there's more free space than was needed to be allocated
+//instead of allocating the whole free block that we have
+//let's just allocate the size that we need and then initialize the next block with the size that is left
+ if (header && (blk_size < *header)){
+// split block if possible 
+    //after giving the current allocation/block a size -- allocating it, 
+    // the next free block now has a size of what's left from the free space 
+    *(size_t *)((char *)header + blk_size) = *header - blk_size;
+    // give the header the aligned block size
+    *header = blk_size;
+    // now WHAT ABOUT THE ORIGINAL SIZE - we don't need it -
+ 
+ }
+ 
+ else{
+     // all the space is done -- after this there must be a full block
+      }
+    
+ total_used += (*header);
+ *header = blk_size | 1; //allocate the memory, set the allocated bit
+
+ not_allocated +=1; //not allocated is now false
  return (char *)header + 8; //returns a pointer to the payload (not to the header)
 }
 
 void my_free(void *ptr) {
-   if(ptr == NULL){
-        printf("Aborting because it is a null pointer and that's what happens in free implemented by c\njust as well I could've made it return null");
-        assert(ptr !=NULL);
+   if(NULL == ptr){
+        exit(EXIT_FAILURE);
+	// I think this is really what C returns from free()
+        // assert(ptr !=NULL);
    }
-    
- size_t *header = (size_t *)((char *)ptr - SIZE_T_SIZE);
+
+// get the pointer from our 'implicit array'
+ size_t *header = (size_t *)((char *)ptr - SIZE_T_SIZE); //go before the header
  //invalid pointer passed in
- assert(header !=NULL);
+//  assert(header !=NULL); //again, this is really what it does
  if(header == NULL){
-     printf("invalid pointer");
      return;
  }
- printf("my freed pointer has size %lu", *header);
- total_used -= (size_t)header;
- *header = *header & ~1L; //set the allocation bit to 0
- printf("my freed pointer after setting allocation has size %lu", *header);
- not_allocated -=1;
 
+ total_used -= ((*header) -1);
+ *header = *header & ~1L; //set the allocation bit to 0
+
+ not_allocated -=1;
+ size_t *diff_header = (size_t *)mem_heap,
+ *next;
+
+// I could merge the free ones together but I don't really have to because I merge when
+// I search for a spot - this would make the O(1) into O(n) where n is the number of blocks I have
+// go through all the blocks from the beginning and merge the free ones together
+while ((char*)diff_header < mem_max_addr){
+    if (((*diff_header) & 1) ==0){
+        next = (size_t *)((char*)diff_header + (*diff_header & ~1L));
+
+        if ((char *)next < mem_max_addr && !(*next & 1)) {
+            *diff_header += *next; //add next's size
+            continue;
+        }
+    } // if it is allocated just go to the next block
+    diff_header = (size_t *)((char*)diff_header + (*diff_header & ~1L));
+    }
+}
+
+
+
+// finds a spot for the size that is inputted
+void *find_fit(size_t size) {
+ //start pointing to the the beginning of our heap
+ size_t *header = (size_t *)mem_heap,
+ *next;
+while ((char*)header < mem_max_addr) { //while we haven't reached the end
+    if (((*header) & 1) ==0) {   //if there's a spot available
+        if ((int)*header >= size) //if there's enough space to be allocated, take it
+            return header;  //returns a pointer to the beginning of the block(including the header)
+
+        //if there's not enough space
+        next = (size_t *)((char*)header + (*header & ~1L)); //go to the next spot
+    // merge with next block if available & free
+        if ((char *)next < mem_max_addr && !(*next & 1)) {
+            *header += *next; //add next's size
+            continue;
+        }
+        
+    } //if the spot is not free continue go to the next block in the 'implicit' array
+    header = (size_t *)((char*)header + (*header & ~1L)); //have to minus the allocated bit
+    
+}
+//we didn't find a free spot
+return NULL;
 }
 
 typedef struct  {
@@ -157,7 +171,8 @@ typedef struct  {
 void mem_get_stats(mem_stats_ptr mem_stats_ptr){
     //blocks are always a multiple of 8 because of alignment
     // so putting in i.e. 50 really rounds up to the closest multiple of 8 - 64
-    if(!(not_allocated >0)){
+    // this is just for after calling mem init when we haven't done anything yet
+    if(not_allocated ==0){
         mem_stats_ptr->num_blocks_free = 1;
         mem_stats_ptr->num_blocks_used = 0;
         mem_stats_ptr->largest_block_used = 0;
@@ -166,71 +181,95 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr){
         mem_stats_ptr->smallest_block_used = 0;
         return;
     }
-    mem_stats_ptr->num_blocks_free = 1;
+    mem_stats_ptr->num_blocks_free = 0; //everything starts off at zero
     mem_stats_ptr->num_blocks_used = 0;
     mem_stats_ptr->largest_block_used = 0;
-    mem_stats_ptr->largest_block_free = global_mem_size;
-    mem_stats_ptr->smallest_block_free = global_mem_size;
-    mem_stats_ptr->smallest_block_used = -1;
-    size_t *header = heap_start();
+    mem_stats_ptr->largest_block_free = -1;
+    mem_stats_ptr->smallest_block_free = -1;
+    mem_stats_ptr->smallest_block_used = 0;
+    size_t *header = (size_t *)mem_heap;
     int smallest_free_size = global_mem_size;
     int largest_free_size = 0;
-    int cur_free_size;
+    int cur_free_size =0;
+	
     //loop till the end of the heap
-    while (header < (size_t *)heap_end()) {
-        cur_free_size = 0;
+    while (header < (size_t *)mem_max_addr) {
+        cur_free_size=0;
         largest_free_size = 0;
         smallest_free_size = 0;
-        if((!(*header & 1)) == 1){
-            mem_stats_ptr->num_blocks_free += 1;
-            while((!(*header & 1)) == 1){ //there's a free block
-            cur_free_size += *header;
-            header = (size_t *)((char *)header + (*header & ~1L));   //anding it helps with alignment   
+
+        //start by a free block
+        if((*header & 1) == 0){
            
+            mem_stats_ptr->num_blocks_free += 1;
+            //go until we reach an unallocated bit and stop if we've reached the end
+            while(((*header & 1) != 1) && (header < (size_t *)mem_max_addr)){ //there's a free block
+                cur_free_size += *header; //add up the sizes that are in those blocks
+                header = (size_t *)((char *)header + (*header & ~1L)); //go to the next block     
             }
-            if (cur_free_size < smallest_free_size){
+            // check if we've set these already - we only need to check one of them
+            // because if we've set one, then we've set the other
+            // or if we haven't because if we haven't we can just set to what we have
+            if(mem_stats_ptr->largest_block_free == -1){
                 smallest_free_size = cur_free_size;
-            }
-            if (cur_free_size >largest_free_size){
                 largest_free_size = cur_free_size;
+                mem_stats_ptr->largest_block_free = cur_free_size;
+                mem_stats_ptr->smallest_block_free = cur_free_size;
             }
-            //won't be a free bit anymore when we get here 
-            printf("freed size is: %d\n",cur_free_size);
+            else{
+                    // we're here at the end of a free block
+                // so let's set the smallest free block if we can
+                if (cur_free_size < smallest_free_size){
+                    smallest_free_size = cur_free_size;
+                    mem_stats_ptr->smallest_block_free = cur_free_size;
+                }
+                // or the largest free block if we can
+                if (cur_free_size >largest_free_size){
+                    largest_free_size = cur_free_size;
+                    mem_stats_ptr->largest_block_free = cur_free_size;
+                }
+            }
+            
+            //won't be a free bit anymore when we get here or we've reached the end of the block
+            if(header == (size_t *)mem_max_addr){
+                mem_stats_ptr->largest_block_free = largest_free_size;
+                mem_stats_ptr->smallest_block_free = smallest_free_size;
+                return;
+            }
         }    
        
         else if((*header & 1) == 1){ //there's a used block
-            
-          
+             //need to reset free size to 0
+            cur_free_size = 0;
             mem_stats_ptr->num_blocks_used += 1;
-            //if the blksize is smaller than the smallest used block size
-            //then minusing the blksize from global memory will be the biggest free
-            //block
 
-            //for the first time
-            if(largest_free_size == 0 && smallest_free_size==0){
-                largest_free_size = global_mem_size - (mem_brk-mem_heap);
+
+            // all the *header -1 gives the actual size block because allocation uses 1 btye
+            //for the first time, the header is at the beginning of the heap
+            if(header == (size_t *)mem_heap){
+                // printf("we're in the first spot\n");
+                largest_free_size = global_mem_size - *header;
                 smallest_free_size = global_mem_size - (mem_brk-mem_heap);
-            }
-            if(mem_stats_ptr->smallest_block_used == -1){
                 mem_stats_ptr->smallest_block_used = *header -1;
-            }
-            if (*header <mem_stats_ptr->smallest_block_used){
-                mem_stats_ptr->smallest_block_used = *header -1;
-                mem_stats_ptr->largest_block_free = largest_free_size;
-            }
-            // printf("header %zu in used block\n", *header);
-            if ((*header >mem_stats_ptr->largest_block_used)){
-                mem_stats_ptr->smallest_block_free = smallest_free_size;
-                // mem_stats_ptr->smallest_block_free = global_mem_size-*header-1;
                 mem_stats_ptr->largest_block_used = *header - 1;
             }
+            // if we're not by the first spot in the heap
+            else{
+                if((*header-1) < mem_stats_ptr->smallest_block_used){
+                mem_stats_ptr->smallest_block_used = *header -1;
+                }
+                
+                if ((*header-1) > mem_stats_ptr->largest_block_used){
+                    mem_stats_ptr->largest_block_used = *header -1;
+                    // mem_stats_ptr->largest_block_free = largest_free_size;
+                }
+            }
         }
-        else printf("WHAT WOULD THIS BE?");
         
-        // header = header + *header;
+        // while we're not at the end of the heap
         header = (size_t *)((char *)header + (*header & ~1L)); //continue looping
     }
-    if(header == (size_t *)heap_end()-1){ //it will never get here, probably
+    if(header == (size_t *)mem_max_addr-1){ //it will never get here, probably
         printf("true");
     }
  
