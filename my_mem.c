@@ -168,6 +168,8 @@ typedef struct  {
   int largest_block_used;
 } mem_stats_struct, *mem_stats_ptr;
 
+
+// this function sort of works
 void mem_get_stats(mem_stats_ptr mem_stats_ptr){
     //blocks are always a multiple of 8 because of alignment
     // so putting in i.e. 50 really rounds up to the closest multiple of 8 - 64
