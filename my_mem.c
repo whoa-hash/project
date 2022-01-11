@@ -6,8 +6,8 @@
 #include <string.h>
 
 // code is inspired by the Ilinois Institute College of Science
-/*alignment is 8 + 8 for the header so if you have n bytes allocated 
-it's really n*alignment(8) + 8(header) i.e. 1 byte will have a 16 byte block allocated
+/*alignment is n + 8 (for the header) + extra(extra-for alignment to be multiple of 8)  so if you have n bytes allocated 
+it's really n + 8(header) + extra to round up to a multiple of 8 i.e. 1 byte will have a 16 byte block allocated - 1+8 = 9, round up to 16.
 */
 //if it's a power of 2 you can use the last bit on the right (which is 8 bytes over) for allocation
 #define ALIGNMENT 8 // must be a power of 2 for the byte allocation
