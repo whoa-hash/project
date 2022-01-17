@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "header_file.h"
+#include "mem_all.h"
 
 //points to the first byte in the heap
 
