@@ -1,5 +1,5 @@
-# Memory Allocater in C
-This is a memory allocater, coded in C that does the 2 basic functions of C's malloc() and free(). (Side point: However, unlike C's malloc, my_malloc() doesn't add more memory if it was used up.)
+# Memory Allocator in C
+This is a memory allocator, coded in C that does the 2 basic functions of C's malloc() and free(). (Side point: However, unlike C's malloc, my_malloc() doesn't add more memory if it was used up.)
 
 Malloc allocates a size of bytes (AKA memory) for the user and returns a pointer to the allocated size in memory.
 Free frees the size of bytes, deallocates it, so that that memory can be used again.
